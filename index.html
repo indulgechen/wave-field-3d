@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="3D 立体波场：一排质点上下振动形成行波，点击任意质点把它请出队列，查看该位置随时间的振动曲线。">
+<meta name="color-scheme" content="light">
+<title>立体波场与质点振动 · 3D 交互演示</title>
+<style>
+  :root{
+    --paper:#f2ede2;
+    --paper-raised:#fbf7ec;
+    --paper-deep:#e8e0d1;
+    --ink:#122b30;
+    --ink-soft:#405b60;
+    --muted:#6a7d7f;
+    --line:rgba(18,43,48,.15);
+    --line-strong:rgba(18,43,48,.29);
+    --ocean:#0b6675;
+    --ocean-deep:#073d48;
+    --aqua:#73dfcf;
+    --cyan:#9bdbe6;
+    --gold:#d1a05a;
+    --coral:#df7c60;
+    --deep:#071f26;
+    --sans:"Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --serif:"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun",Georgia,serif;
+    --math:"Cambria Math","Latin Modern Math",Cambria,Georgia,"Times New Roman",serif;
+    --mono:"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  figure{margin:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    min-width:320px;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% -10%, rgba(255,255,255,.96), transparent 38%),
+      radial-gradient(circle at 98% 4%, rgba(198,226,225,.52), transparent 31%),
+      var(--paper);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(rgba(18,43,48,.034) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(18,43,48,.034) 1px, transparent 1px);
+    background-size:54px 54px;
+    mask-image:radial-gradient(ellipse 90% 70% at 50% 8%, #000 18%, transparent 82%);
+    -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 8%, #000 18%, transparent 82%);
+  }
+  ::selection{background:#cfe5e2;color:var(--ink);}
+  button,input{font:inherit;}
+  button{color:inherit;}
+  button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
+    outline:2px solid var(--coral);
+    outline-offset:3px;
+  }
+  .shell{
+    position:relative;
+    z-index:1;
+    width:min(1480px,100%);
+    margin:0 auto;
+    padding:26px clamp(20px,3.4vw,50px) 34px;
+  }
+
+  /* ---------------- hero ---------------- */
+  .hero{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 286px;
+    gap:42px;
+    align-items:end;
+    padding:8px 0 26px;
+    border-top:1px solid var(--line-strong);
+  }
+  .hero-copy{padding-top:19px;}
+  .kicker{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:9px;
+    margin:0 0 16px;
+    color:var(--ocean);
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+  }
+  .kicker::before{content:"";width:28px;height:1px;background:var(--ocean);}
+  .kicker .dot{width:3px;height:3px;border-radius:50%;background:var(--coral);}
+  h1{
+    margin:0;
+    max-width:1000px;
+    font-family:var(--serif);
+    font-size:clamp(44px,5.4vw,78px);
+    font-weight:600;
+    line-height:1.04;
+    letter-spacing:-.055em;
+  }
+  h1 em{
+    color:var(--ocean);
+    font-style:normal;
+    position:relative;
+    white-space:nowrap;
+  }
+  h1 em::after{
+    content:"";
+    position:absolute;
+    left:.02em;right:.03em;bottom:-.04em;
+    height:.045em;
+    background:linear-gradient(90deg,var(--coral),rgba(223,124,96,0));
+    border-radius:99px;
+  }
+  .dek{
+    max-width:810px;
+    margin:19px 0 0;
+    color:#52676a;
+    font-size:16px;
+    line-height:1.92;
+  }
+  .dek b{color:var(--ink);font-weight:700;}
+  .dek i{font-family:var(--math);font-size:1.12em;color:var(--ocean);font-style:italic;}
+  .hero-side{
+    padding:0 0 4px 23px;
+    border-left:1px solid var(--line);
+  }
+  .lesson-no{
+    color:var(--coral);
+    font-family:var(--serif);
+    font-size:52px;
+    line-height:1;
+    letter-spacing:-.045em;
+  }
+  .lesson-name{margin:9px 0 0;font-size:14px;font-weight:700;letter-spacing:.035em;}
+  .lesson-topic{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.65;}
+  .hero-eq{
+    margin-top:17px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    color:var(--ink);
+    font-family:var(--math);
+    font-size:22px;
+    line-height:1.3;
+  }
+  .hero-eq small{
+    display:block;
+    margin-top:5px;
+    color:var(--muted);
+    font-family:var(--sans);
+    font-size:9px;
+    letter-spacing:.09em;
+  }
+
+  /* ---------------- readout ---------------- */
+  .readout-strip{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    color:#eef5f3;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(83,166,178,.18), transparent 42%),
+      linear-gradient(145deg,#0b333a 0%,#072529 58%,#041a1e 100%);
+    box-shadow:0 22px 45px -36px rgba(5,43,47,.78),0 1px 0 rgba(255,255,255,.06) inset;
+  }
+  .readout-item{position:relative;min-width:0;padding:14px 20px 13px;}
+  .readout-item + .readout-item{border-left:1px solid rgba(255,255,255,.09);}
+  .readout-label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:rgba(183,216,212,.62);
+    font-size:8.5px;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .readout-label::before{content:"";width:4px;height:4px;border-radius:50%;background:currentColor;}
+  .readout-item.time .readout-label{color:#acd0c9;}
+  .readout-item.period .readout-label{color:#b8d3d0;}
+  .readout-item.wavelength .readout-label{color:#e5bd7d;}
+  .readout-item.speed .readout-label{color:#7ee0d0;}
+  .readout-item.frequency .readout-label{color:#ed9d84;}
+  .readout-value{
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+    margin-top:3px;
+    color:#f3ead9;
+    font-family:var(--math);
+    font-size:29px;
+    line-height:1.15;
+    letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout-value small{color:rgba(189,218,213,.58);font-family:var(--sans);font-size:9px;letter-spacing:.04em;white-space:nowrap;}
+  .readout-item.wavelength .readout-value{color:#f3d196;}
+  .readout-item.speed .readout-value{color:#96eadc;}
+  .readout-item.frequency .readout-value{color:#f1a88f;}
+  .live-mark{
+    position:absolute;
+    top:13px;right:14px;
+    display:flex;align-items:center;gap:5px;
+    color:rgba(159,211,204,.55);
+    font-family:var(--mono);
+    font-size:7px;letter-spacing:.1em;
+  }
+  .live-mark i{width:4px;height:4px;border-radius:50%;background:#74d6c3;box-shadow:0 0 0 3px rgba(116,214,195,.1);}
+  .is-paused .live-mark i{background:var(--gold);box-shadow:0 0 0 3px rgba(209,160,90,.12);}
+  .run-state{margin-left:4px;color:rgba(170,205,199,.48);font-family:var(--mono);font-size:7px;letter-spacing:0;}
+
+  /* ---------------- stage + sidebar ---------------- */
+  .stage-layout{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 372px;
+    gap:14px;
+    margin-top:14px;
+    align-items:stretch;
+  }
+  .scene-card{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    min-height:592px;
+    overflow:hidden;
+    isolation:isolate;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:20px;
+    color:#eef5f3;
+    background:
+      radial-gradient(ellipse at 50% 48%, rgba(35,121,132,.24), transparent 58%),
+      linear-gradient(145deg,#0a3038 0%,#062127 58%,#04171b 100%);
+    box-shadow:0 28px 60px -38px rgba(4,36,42,.85),0 1px 0 rgba(255,255,255,.06) inset;
+  }
+  .scene-card::before{
+    content:"";
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(rgba(168,225,224,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(168,225,224,.035) 1px,transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 82% 74% at 50% 50%,#000 15%,transparent 82%);
+    -webkit-mask-image:radial-gradient(ellipse 82% 74% at 50% 50%,#000 15%,transparent 82%);
+  }
+  .scene-head{
+    position:relative;z-index:3;
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:14px;
+    padding:16px 19px 6px;
+  }
+  .scene-title{display:flex;align-items:center;gap:9px;min-width:0;}
+  .scene-title .mark{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 3px rgba(155,219,230,.1);flex:0 0 auto;}
+  .scene-title h2{margin:0;font-family:var(--serif);font-size:18px;font-weight:600;line-height:1.4;white-space:nowrap;}
+  .scene-title small{color:rgba(171,211,208,.42);font-family:var(--mono);font-size:7.5px;letter-spacing:.12em;white-space:nowrap;}
+  .scene-tools{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+  .scene-tag{
+    padding:4px 8px;border:1px solid rgba(255,255,255,.1);border-radius:99px;
+    color:rgba(203,232,228,.6);font-family:var(--mono);font-size:7.5px;letter-spacing:.08em;white-space:nowrap;
+  }
+  .view-reset{
+    display:grid;place-items:center;width:27px;height:27px;padding:0;
+    border:1px solid rgba(255,255,255,.12);border-radius:7px;
+    background:rgba(255,255,255,.045);color:rgba(207,234,228,.65);cursor:pointer;
+    transition:background .18s ease,color .18s ease;
+  }
+  .view-reset:hover{background:rgba(255,255,255,.09);color:#f3f0e6;}
+  .view-reset svg{width:13px;height:13px;}
+  .scene-canvas-wrap{position:relative;flex:1 1 auto;min-height:0;z-index:1;margin:0 4px;}
+  #sceneCanvas{
+    position:absolute;inset:0;display:block;width:100%;height:100%;
+    touch-action:none;cursor:grab;
+  }
+  .scene-canvas-wrap.is-dragging #sceneCanvas{cursor:grabbing;}
+  .scene-foot{
+    position:relative;z-index:3;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+    padding:4px 19px 12px;
+    color:rgba(180,217,212,.52);
+    font-size:8.5px;line-height:1.5;
+  }
+  .scene-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .scene-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  .scene-legend i{width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 0 2px rgba(255,255,255,.04);}
+  .scene-legend .a{color:#8fe4d8;}
+  .scene-legend .b{color:#e8a88f;}
+  .scene-legend .c{color:#e7c078;}
+  .scene-hint{color:rgba(173,211,205,.4);font-size:7.5px;white-space:nowrap;}
+  .side-panel{display:flex;flex-direction:column;gap:12px;min-width:0;}
+  .selected-card{
+    position:relative;
+    overflow:hidden;
+    padding:16px 17px 14px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    color:#edf5ef;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(223,124,96,.18), transparent 42%),
+      linear-gradient(145deg,#0d3538 0%,#082529 62%,#061b1f 100%);
+    box-shadow:0 22px 44px -34px rgba(5,43,42,.82),0 1px 0 rgba(255,255,255,.06) inset;
+  }
+  .selected-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(214,241,234,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(214,241,234,.04) 1px,transparent 1px);
+    background-size:26px 26px;
+    mask-image:linear-gradient(140deg,#000,transparent 68%);
+    -webkit-mask-image:linear-gradient(140deg,#000,transparent 68%);
+  }
+  .selected-card > *{position:relative;z-index:1;}
+  .selected-head{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    color:rgba(210,236,230,.72);font-size:9px;font-weight:600;letter-spacing:.09em;
+  }
+  .selected-head small{color:rgba(170,205,198,.42);font-family:var(--mono);font-size:7px;letter-spacing:.12em;}
+  .selected-main{display:flex;align-items:flex-end;gap:10px;margin-top:6px;}
+  .selected-dot{width:11px;height:11px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(223,124,96,.13);margin-bottom:8px;flex:0 0 auto;}
+  .selected-x{display:flex;align-items:baseline;gap:4px;color:#f5ecdc;font-family:var(--math);font-size:46px;line-height:.95;letter-spacing:-.04em;}
+  .selected-x small{color:rgba(189,220,213,.5);font-family:var(--sans);font-size:10px;}
+  .selected-caption{padding-bottom:6px;color:rgba(205,231,225,.54);font-size:9px;line-height:1.4;}
+  .selected-caption small{display:block;margin-top:2px;color:rgba(167,201,194,.38);font-family:var(--mono);font-size:6.5px;letter-spacing:.09em;}
+  .selected-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;}
+  .selected-stat{padding:7px 8px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.045);}
+  .selected-stat span{display:block;color:rgba(175,208,201,.48);font-size:7.5px;letter-spacing:.07em;}
+  .selected-stat b{display:block;margin-top:2px;color:#8fe4d8;font-family:var(--math);font-size:17px;font-weight:400;line-height:1.2;}
+  .selected-stat:nth-child(2) b{color:#efb18d;}
+
+  .controls-card{
+    flex:0 0 auto;
+    min-height:0;
+    padding:15px 16px 14px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(251,247,236,.88);
+    box-shadow:0 18px 38px -36px rgba(23,55,54,.4);
+  }
+  .transport-row{display:flex;align-items:center;gap:8px;}
+  .play-btn{
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    height:38px;padding:0 14px;border:0;border-radius:9px;
+    color:#f7f1e3;background:linear-gradient(135deg,#0c6573,#073f49);
+    font-size:10.5px;font-weight:600;letter-spacing:.03em;cursor:pointer;
+    box-shadow:0 8px 18px -12px rgba(4,62,70,.8);
+    transition:transform .18s ease,background .18s ease;
+  }
+  .play-btn:hover{transform:translateY(-1px);background:linear-gradient(135deg,#117b89,#0a4c56);}
+  .play-btn svg{width:14px;height:14px;}
+  .play-btn .pause-icon{display:block;}
+  .play-btn .play-icon{display:none;}
+  .is-paused .play-btn .pause-icon{display:none;}
+  .is-paused .play-btn .play-icon{display:block;}
+  .reset-btn{
+    display:grid;place-items:center;width:38px;height:38px;padding:0;
+    border:1px solid var(--line);border-radius:9px;
+    background:rgba(18,43,48,.03);color:var(--muted);cursor:pointer;
+    transition:color .18s ease,background .18s ease;
+  }
+  .reset-btn:hover{color:var(--ink);background:rgba(18,43,48,.06);}
+  .reset-btn svg{width:15px;height:15px;}
+  .speed-row{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-rows:auto auto;gap:3px 6px;align-items:center;margin-top:8px;
+    --range-color:#6b8f8f;
+  }
+  .speed-row .speed-label{grid-column:1;grid-row:1;color:var(--muted);font-size:8px;white-space:nowrap;}
+  .speed-row .speed-value{grid-column:2 / 4;grid-row:1;color:var(--ink-soft);font-family:var(--mono);font-size:8px;text-align:right;}
+  .speed-row input{grid-column:1 / -1;grid-row:2;width:100%;}
+  .params-mini{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:11px;
+  }
+  .param-col{min-width:0;--range-color:var(--ocean);}
+  .param-col.f{--range-color:var(--gold);}
+  .param-col.l{--range-color:var(--cyan);}
+  .param-col.p{--range-color:var(--coral);}
+  .param-head{display:flex;align-items:baseline;justify-content:space-between;gap:7px;margin-bottom:4px;color:var(--ink-soft);font-size:9px;font-weight:600;line-height:1.3;white-space:nowrap;}
+  .param-head .sym{margin-left:3px;color:var(--muted);font-family:var(--math);font-size:10px;font-style:italic;font-weight:400;}
+  .param-head b{color:var(--ink);font-family:var(--mono);font-size:8.5px;font-weight:500;white-space:nowrap;}
+  .param-head b small{color:var(--muted);font-size:7.5px;margin-left:1px;}
+  .probe-control{margin-top:11px;padding-top:10px;border-top:1px solid var(--line);--range-color:var(--coral);}
+  .probe-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;color:var(--ink-soft);font-size:9px;font-weight:600;}
+  .probe-head b{color:var(--ink);font-family:var(--mono);font-size:9px;font-weight:500;}
+  .control-hint{margin:7px 0 0;color:var(--muted);font-size:8px;line-height:1.5;}
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;margin:0;border-radius:99px;
+    background:linear-gradient(90deg,var(--range-color,var(--ocean)) 0%,var(--range-color,var(--ocean)) var(--fill,50%),rgba(18,43,48,.13) var(--fill,50%),rgba(18,43,48,.13) 100%);
+    cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:12px;height:12px;border:2px solid var(--paper-raised);border-radius:50%;
+    background:var(--range-color,var(--ocean));box-shadow:0 0 0 1px var(--range-color,var(--ocean)),0 2px 4px rgba(14,39,38,.17);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:9px;height:9px;border:2px solid var(--paper-raised);border-radius:50%;
+    background:var(--range-color,var(--ocean));box-shadow:0 0 0 1px var(--range-color,var(--ocean));
+  }
+  .side-note-card{
+    margin-top:auto;
+    padding:11px 14px;
+    border:1px dashed var(--line-strong);
+    border-radius:12px;
+    background:rgba(251,247,236,.55);
+    color:var(--muted);
+    font-size:8.5px;
+    line-height:1.6;
+  }
+  .side-note-card b{
+    display:block;
+    margin-bottom:3px;
+    color:var(--ink-soft);
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.05em;
+  }
+
+  /* ---------------- graph + theory ---------------- */
+  .lower-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr);
+    gap:14px;
+    margin-top:14px;
+    align-items:stretch;
+  }
+  .graph-card{
+    display:flex;flex-direction:column;min-width:0;min-height:304px;height:100%;
+    overflow:hidden;border:1px solid var(--line);border-radius:18px;
+    background:var(--paper-raised);
+    box-shadow:0 20px 42px -36px rgba(23,55,54,.4);
+  }
+  .graph-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 18px 4px;}
+  .graph-title{display:flex;align-items:center;gap:8px;}
+  .graph-title .mark{width:7px;height:7px;border-radius:50%;background:var(--ocean);box-shadow:0 0 0 3px rgba(11,102,117,.1);}
+  .graph-title h2{margin:0;font-family:var(--serif);font-size:17px;font-weight:600;line-height:1.4;white-space:nowrap;}
+  .graph-title small{color:var(--muted);font-family:var(--mono);font-size:7.5px;letter-spacing:.12em;white-space:nowrap;}
+  .graph-tag{padding:4px 8px;border:1px solid var(--line);border-radius:99px;color:var(--muted);background:rgba(18,43,48,.03);font-family:var(--mono);font-size:7.5px;letter-spacing:.07em;white-space:nowrap;}
+  .graph-canvas-wrap{position:relative;flex:1;min-height:0;margin:0 4px 2px;}
+  #graphCanvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
+  .graph-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 18px 11px;color:var(--muted);font-size:8px;line-height:1.5;}
+  .graph-foot b{color:var(--ink-soft);font-weight:600;}
+  .graph-foot .curve-key{display:flex;align-items:center;gap:5px;}
+  .graph-foot .curve-key i{width:6px;height:6px;border-radius:50%;background:var(--coral);}
+  .theory-card{
+    min-width:0;height:100%;padding:18px 19px;border:1px solid var(--line);border-radius:18px;
+    background:rgba(251,247,236,.86);box-shadow:0 18px 38px -36px rgba(23,55,54,.38);
+  }
+  .theory-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px;}
+  .theory-head h2{margin:0;font-family:var(--serif);font-size:17.5px;font-weight:600;line-height:1.35;}
+  .theory-head small{color:var(--muted);font-family:var(--mono);font-size:7px;letter-spacing:.1em;white-space:nowrap;}
+  .formula-box{
+    padding:8px 10px;border:1px solid rgba(18,43,48,.09);border-radius:8px;
+    background:rgba(255,255,255,.35);font-family:var(--math);font-size:17px;line-height:1.35;overflow-wrap:anywhere;
+  }
+  .formula-box b{color:var(--ocean);font-weight:400;}
+  .formula-box i{color:var(--coral);font-style:italic;}
+  .theory-note{margin:9px 0 0;color:var(--muted);font-size:9px;line-height:1.7;}
+  .theory-note b{color:var(--ink-soft);font-weight:600;}
+  .insight-list{display:grid;gap:6px;margin:0;padding:0;list-style:none;counter-reset:item;}
+  .insight-list li{position:relative;padding-left:24px;color:var(--ink-soft);font-size:9.5px;line-height:1.65;}
+  .insight-list li::before{
+    counter-increment:item;content:counter(item,decimal-leading-zero);
+    position:absolute;top:2px;left:0;color:var(--gold);font-family:var(--mono);font-size:7.5px;
+  }
+  .insight-list b{color:var(--ink);font-weight:600;}
+  .color-key{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:8px;}
+  .color-key span{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+  .color-key i{width:5px;height:5px;border-radius:50%;background:var(--aqua);}
+  .color-key i:nth-of-type(2){background:var(--coral);}
+
+  /* ---------------- footer ---------------- */
+  .footer{
+    display:flex;align-items:center;justify-content:space-between;gap:22px;margin-top:18px;padding-top:12px;
+    border-top:1px solid var(--line);color:var(--muted);font-size:9px;letter-spacing:.03em;
+  }
+  .footer b{color:var(--ink-soft);font-weight:600;}
+  .keys{display:flex;align-items:center;flex-wrap:wrap;gap:7px;justify-content:flex-end;}
+  .key{display:inline-flex;align-items:center;gap:4px;}
+  kbd{
+    display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;
+    border:1px solid var(--line);border-bottom-color:var(--line-strong);border-radius:4px;
+    background:rgba(255,255,255,.36);color:var(--ink-soft);font-family:var(--mono);font-size:8px;line-height:1;
+  }
+
+  /* ---------------- responsive ---------------- */
+  @media (max-width:1160px){
+    .hero{grid-template-columns:minmax(0,1fr) 250px;gap:30px;}
+    .stage-layout{grid-template-columns:minmax(0,1fr) 340px;}
+    .scene-card{min-height:560px;}
+    .selected-x{font-size:42px;}
+  }
+  @media (max-width:980px){
+    .stage-layout{grid-template-columns:1fr;}
+    .scene-card{min-height:500px;}
+    .side-panel{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);align-items:stretch;}
+    .selected-card{min-height:0;}
+    .side-note-card{grid-column:1 / -1;margin-top:0;}
+    .lower-grid{grid-template-columns:1fr;}
+    .graph-card{min-height:300px;}
+    .theory-card{min-height:0;}
+  }
+  @media (max-width:760px){
+    .shell{padding:18px 18px 28px;}
+    .hero{grid-template-columns:1fr;gap:22px;padding-bottom:22px;}
+    .hero-copy{padding-top:15px;}
+    h1{font-size:clamp(41px,10vw,58px);}
+    .dek{font-size:14px;margin-top:15px;}
+    .hero-side{
+      display:grid;grid-template-columns:auto 1fr;align-items:center;gap:0 16px;
+      padding:14px 0 0;border-left:0;border-top:1px solid var(--line);
+    }
+    .lesson-no{grid-row:1 / span 3;font-size:44px;}
+    .lesson-name{margin:0;}
+    .lesson-topic{margin:2px 0 0;}
+    .hero-eq{display:none;}
+    .readout-strip{grid-template-columns:repeat(2,1fr);}
+    .readout-item{padding:11px 14px 10px;}
+    .readout-item:nth-child(2n){border-left:1px solid rgba(255,255,255,.09);}
+    .readout-item:nth-child(n+3){border-top:1px solid rgba(255,255,255,.09);}
+    .readout-item:nth-child(5){grid-column:1 / -1;border-left:0;}
+    .readout-value{font-size:25px;}
+    .scene-card{min-height:430px;border-radius:16px;}
+    .scene-head{padding:13px 15px 5px;}
+    .scene-title h2{font-size:16px;}
+    .scene-tag{display:none;}
+    .scene-foot{padding:3px 15px 9px;font-size:7.5px;}
+    .scene-hint{display:none;}
+    .side-panel{grid-template-columns:1fr;gap:10px;}
+    .controls-card{border-radius:16px;}
+    .graph-card{border-radius:16px;min-height:290px;}
+    .graph-head{padding:12px 15px 3px;}
+    .graph-foot{padding:2px 15px 9px;}
+    .theory-card{border-radius:16px;padding:16px;}
+    .footer{flex-direction:column;align-items:flex-start;gap:8px;}
+    .keys{justify-content:flex-start;}
+  }
+  @media (max-width:560px){
+    .shell{padding:14px 13px 24px;}
+    h1{font-size:clamp(38px,10.8vw,50px);}
+    .kicker{font-size:9.5px;gap:7px;letter-spacing:.1em;}
+    .kicker::before{width:18px;}
+    .readout-item{padding:9px 11px 9px;}
+    .readout-label{font-size:7.5px;}
+    .readout-value{font-size:22px;}
+    .readout-value small{font-size:8px;}
+    .run-state{font-size:6.5px;}
+    .scene-card{min-height:390px;}
+    .scene-title small{display:none;}
+    .scene-card .scene-tag{display:inline-block;padding:3px 6px;font-size:7px;}
+    .scene-legend{gap:9px;}
+    .scene-hint{display:none;}
+    .selected-card{padding:14px 14px 12px;}
+    .selected-x{font-size:38px;}
+    .selected-stats{grid-template-columns:1fr 1fr;}
+    .selected-stat b{font-size:15px;}
+    .controls-card{padding:14px;}
+    .params-mini{gap:9px 10px;}
+    .param-head{font-size:8.5px;}
+    .param-head b{font-size:8px;}
+    .graph-card{min-height:275px;}
+    .graph-title h2{font-size:15px;}
+    .graph-title small{display:none;}
+    .graph-tag{display:none;}
+    .theory-head h2{font-size:16px;}
+    .formula-box{font-size:15.5px;}
+    .footer{font-size:8px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{
+      animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="shell" id="appShell">
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="kicker">
+        <span>第十章 · 机械波</span><span class="dot"></span>
+        <span>3D 波场</span><span class="dot"></span>
+        <span>Wave Field</span>
+      </div>
+      <h1>一排质点，<em>一列波</em></h1>
+      <p class="dek">
+        把波想象成一排学生：每个人只在原地上下运动，<b>“谁高谁低”的状态却沿队列传下去</b>。点击队列中的任意质点，把它请到前排，单独观察它的 <b>y-t 振动曲线</b>。
+      </p>
+    </div>
+    <aside class="hero-side" aria-label="课程信息">
+      <div class="lesson-no">10</div>
+      <p class="lesson-name">立体波场</p>
+      <p class="lesson-topic">相位 · 波长 · 波速</p>
+      <div class="hero-eq">
+        y = A sin(ωt − kx + φ)
+        <small>3D PARTICLE ROW · WAVE PROPAGATION</small>
+      </div>
+    </aside>
+  </header>
+
+  <main>
+    <section class="readout-strip" aria-label="实时参数">
+      <div class="readout-item time">
+        <span class="readout-label">时间 t</span>
+        <div class="readout-value"><strong id="timeValue">0.00</strong><small>s</small><span class="run-state" id="runState">运行中</span></div>
+        <span class="live-mark"><i></i><span id="liveLabel">LIVE</span></span>
+      </div>
+      <div class="readout-item period">
+        <span class="readout-label">周期 T</span>
+        <div class="readout-value"><strong id="periodValue">1.00</strong><small>s</small></div>
+      </div>
+      <div class="readout-item wavelength">
+        <span class="readout-label">波长 λ</span>
+        <div class="readout-value"><strong id="lambdaValue">3.00</strong><small>m</small></div>
+      </div>
+      <div class="readout-item speed">
+        <span class="readout-label">波速 v = λf</span>
+        <div class="readout-value"><strong id="waveSpeedValue">3.00</strong><small>m/s</small></div>
+      </div>
+      <div class="readout-item frequency">
+        <span class="readout-label">频率 f</span>
+        <div class="readout-value"><strong id="frequencyValue">1.00</strong><small>Hz</small></div>
+      </div>
+    </section>
+
+    <section class="stage-layout" aria-label="三维波场">
+      <figure class="scene-card">
+        <div class="scene-head">
+          <div class="scene-title">
+            <span class="mark" aria-hidden="true"></span>
+            <h2>立体波场</h2>
+            <small>PARTICLE ROW</small>
+          </div>
+          <div class="scene-tools">
+            <span class="scene-tag">→ 右行波</span>
+            <button class="view-reset" id="resetViewBtn" type="button" aria-label="重置视角" title="重置视角">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4.8 9.2A8 8 0 1 1 4 14"/><path d="M4.5 4.8v4.7h4.7"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="scene-canvas-wrap" id="sceneWrap">
+          <canvas id="sceneCanvas" role="img" aria-label="三维质点队列：一排质点在平衡位置附近上下振动，选中质点被移到队列前方"></canvas>
+        </div>
+        <div class="scene-foot">
+          <div class="scene-legend" aria-hidden="true">
+            <span class="a"><i></i>质点</span>
+            <span class="b"><i></i>选中质点</span>
+            <span class="c"><i></i>平衡位置</span>
+          </div>
+          <span class="scene-hint">拖动旋转 · 滚轮缩放 · 点击质点</span>
+        </div>
+      </figure>
+
+      <aside class="side-panel">
+        <div class="selected-card">
+          <div class="selected-head"><span>被请出的质点</span><small>SELECTED POINT</small></div>
+          <div class="selected-main">
+            <span class="selected-dot" aria-hidden="true"></span>
+            <div class="selected-x"><span id="selectedXValue">0.80</span><small>m</small></div>
+            <div class="selected-caption">观察位置 x₀<small>POSITION</small></div>
+          </div>
+          <div class="selected-stats">
+            <div class="selected-stat"><span>当前位移 y₀</span><b id="selectedYValue">−1.99</b></div>
+            <div class="selected-stat"><span>相位 φ₀</span><b id="selectedPhaseValue">−1.68</b></div>
+          </div>
+        </div>
+
+        <div class="controls-card">
+          <div class="transport-row">
+            <button class="play-btn" id="playBtn" type="button" aria-label="暂停动画">
+              <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="5" width="3.6" height="14" rx="1"/><rect x="13.4" y="5" width="3.6" height="14" rx="1"/></svg>
+              <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg>
+              <span id="playLabel">暂停</span>
+            </button>
+            <button class="reset-btn" id="resetBtn" type="button" aria-label="重置参数和时间" title="重置">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.8 9.2A8 8 0 1 1 4 14"/><path d="M4.5 4.8v4.7h4.7"/></svg>
+            </button>
+          </div>
+          <div class="speed-row">
+            <span class="speed-label">速度</span>
+            <span class="speed-value" id="speedValue">1.0×</span>
+            <input id="speedRange" type="range" min="0.25" max="2" step="0.05" value="1" aria-label="动画速度">
+          </div>
+
+          <div class="params-mini">
+            <div class="param-col a">
+              <div class="param-head"><span>振幅<span class="sym">A</span></span><b id="amplitudeValue">3.0<small>cm</small></b></div>
+              <input id="amplitudeRange" type="range" min="1" max="5" step="0.1" value="3" aria-label="振幅">
+            </div>
+            <div class="param-col f">
+              <div class="param-head"><span>频率<span class="sym">f</span></span><b id="frequencyInputValue">1.0<small>Hz</small></b></div>
+              <input id="frequencyRange" type="range" min="0.5" max="2" step="0.05" value="1" aria-label="频率">
+            </div>
+            <div class="param-col l">
+              <div class="param-head"><span>波长<span class="sym">λ</span></span><b id="lambdaInputValue">3.0<small>m</small></b></div>
+              <input id="lambdaRange" type="range" min="1.5" max="4.5" step="0.1" value="3" aria-label="波长">
+            </div>
+            <div class="param-col p">
+              <div class="param-head"><span>初相位<span class="sym">φ</span></span><b id="phaseInputValue">0.0<small>π</small></b></div>
+              <input id="phaseRange" type="range" min="0" max="2" step="0.05" value="0" aria-label="初相位">
+            </div>
+          </div>
+
+          <div class="probe-control">
+            <div class="probe-head"><span>观察质点 x₀</span><b id="probeXValue">0.80 m</b></div>
+            <input id="probeRange" type="range" min="-4" max="4" step="0.2" value="0.8" aria-label="观察质点位置">
+            <p class="control-hint">也可直接点击三维波列中的质点</p>
+          </div>
+        </div>
+        <div class="side-note-card">
+          <b>观察提示</b>
+          质点只在平衡位置附近上下振动，不随波迁移；沿 x 方向传播的是相位状态。
+        </div>
+      </aside>
+    </section>
+
+    <section class="lower-grid" aria-label="选中质点的振动曲线与原理">
+      <figure class="graph-card">
+        <div class="graph-head">
+          <div class="graph-title">
+            <span class="mark" aria-hidden="true"></span>
+            <h2>选中质点的振动</h2>
+            <small>y–t GRAPH</small>
+          </div>
+          <span class="graph-tag" id="graphTag">x₀ = 0.80 m</span>
+        </div>
+        <div class="graph-canvas-wrap" id="graphWrap">
+          <canvas id="graphCanvas" role="img" aria-label="选中质点随时间的位移曲线，曲线为正弦或余弦形式"></canvas>
+        </div>
+        <div class="graph-foot">
+          <span class="curve-key"><i></i><span>y₀(t) = A sin(ωt + φ − kx₀)</span></span>
+          <span>2T 窗口 · <b id="graphPeriod">T = 1.00 s</b></span>
+        </div>
+      </figure>
+
+      <article class="theory-card">
+        <div class="theory-head"><h2>传播的是相位</h2><small>PHASE</small></div>
+        <div class="formula-box"><b>y(x,t)</b> = A sin(ωt − kx + φ)</div>
+        <div class="formula-box" style="margin-top:7px;"><b>y₀(t)</b> = A sin(ωt + φ − kx₀)</div>
+        <p class="theory-note">
+          固定 <b>x₀</b> 后，质点的振动是一条 <b>y-t 正弦曲线</b>。相邻质点振动状态相同，只是相位依次滞后 <b>kΔx</b>。波速 <b>v = λf = ω/k</b>。
+        </p>
+        <ol class="insight-list" style="margin-top:9px;">
+          <li><b>质点不随波迁移：</b>每个质点只在平衡位置附近上下振动。</li>
+          <li><b>波传播的是状态：</b>“高—低—高”的相位图案沿 x 方向传下去。</li>
+          <li><b>请出一个质点：</b>固定 x₀ 后，三维波列中的点变成一条 y-t 曲线。</li>
+        </ol>
+        <div class="color-key"><span><i></i>波列质点</span><span><i></i>选中质点</span></div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span><b>内容依据：</b>波函数 · 质点振动　|　原生 Canvas 3D · 无需联网 · 可离线运行</span>
+    <span class="keys">
+      <span class="key"><kbd>Space</kbd> 暂停</span>
+      <span class="key"><kbd>R</kbd> 重置</span>
+      <span class="key"><kbd>←</kbd><kbd>→</kbd> 移动观察点</span>
+    </span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const TAU = Math.PI * 2;
+  const R2D = 180 / Math.PI;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const X_HALF = 4.0;
+  const X_STEP = .2;
+  const N_POINTS = Math.round((X_HALF * 2) / X_STEP) + 1; // 41
+  const BASE_Y = -.55;
+  const FLOOR_Y = -2.0;
+  const AMP_SCALE = .25;
+  const PULL_Z = -2.4;
+
+  const defaults = {
+    A: 3.0,
+    f: 1.0,
+    lambda: 3.0,
+    phi: 0,
+    speed: 1,
+    selected: 24, // x = 0.80 m
+    yaw: -.62,
+    pitch: .34,
+    zoom: 1
+  };
+
+  const state = {
+    A: defaults.A,
+    f: defaults.f,
+    lambda: defaults.lambda,
+    phi: defaults.phi * Math.PI,
+    speed: defaults.speed,
+    time: 0,
+    playing: !reducedMotion,
+    selected: defaults.selected,
+    pull: 0,
+    view: { yaw: defaults.yaw, pitch: defaults.pitch, zoom: defaults.zoom },
+    target: { yaw: defaults.yaw, pitch: defaults.pitch, zoom: defaults.zoom }
+  };
+
+  const $ = id => document.getElementById(id);
+  const shell = $('appShell');
+  const timeValue = $('timeValue');
+  const periodValue = $('periodValue');
+  const lambdaValue = $('lambdaValue');
+  const waveSpeedValue = $('waveSpeedValue');
+  const frequencyValue = $('frequencyValue');
+  const runState = $('runState');
+  const liveLabel = $('liveLabel');
+  const selectedXValue = $('selectedXValue');
+  const selectedYValue = $('selectedYValue');
+  const selectedPhaseValue = $('selectedPhaseValue');
+  const playBtn = $('playBtn');
+  const playLabel = $('playLabel');
+  const resetBtn = $('resetBtn');
+  const speedRange = $('speedRange');
+  const speedValue = $('speedValue');
+  const amplitudeRange = $('amplitudeRange');
+  const amplitudeValue = $('amplitudeValue');
+  const frequencyRange = $('frequencyRange');
+  const frequencyInputValue = $('frequencyInputValue');
+  const lambdaRange = $('lambdaRange');
+  const lambdaInputValue = $('lambdaInputValue');
+  const phaseRange = $('phaseRange');
+  const phaseInputValue = $('phaseInputValue');
+  const probeRange = $('probeRange');
+  const probeXValue = $('probeXValue');
+  const graphTag = $('graphTag');
+  const graphPeriod = $('graphPeriod');
+  const resetViewBtn = $('resetViewBtn');
+  const sceneCanvas = $('sceneCanvas');
+  const graphCanvas = $('graphCanvas');
+  const sceneCtx = sceneCanvas.getContext('2d');
+  const graphCtx = graphCanvas.getContext('2d');
+  const sceneWrap = $('sceneWrap');
+  const graphWrap = $('graphWrap');
+
+  const sizes = {
+    scene: { w: 1, h: 1, dpr: 1, focal: 800, cx: 0, cy: 0 },
+    graph: { w: 1, h: 1, dpr: 1 }
+  };
+
+  const particles = Array.from({ length: N_POINTS }, (_, i) => ({
+    index: i,
+    x: -X_HALF + i * X_STEP
+  }));
+
+  let particleScreens = [];
+  const drag = { active: false, id: null, moved: 0, x: 0, y: 0 };
+
+  function selectedX() {
+    return particles[state.selected].x;
+  }
+
+  function omega() { return TAU * state.f; }
+  function kWave() { return TAU / state.lambda; }
+  function period() { return 1 / state.f; }
+  function waveSpeed() { return state.lambda * state.f; }
+  function displacement(x, t = state.time) {
+    return state.A * Math.sin(omega() * t - kWave() * x + state.phi);
+  }
+  function selectedPhase() {
+    return state.phi - kWave() * selectedX();
+  }
+
+  function fitRangeFill(el) {
+    const min = Number(el.min);
+    const max = Number(el.max);
+    const val = Number(el.value);
+    const pct = max === min ? 0 : ((val - min) / (max - min)) * 100;
+    el.style.setProperty('--fill', `${pct}%`);
+  }
+
+  function setPlaying(on) {
+    state.playing = on;
+    shell.classList.toggle('is-paused', !on);
+    playLabel.textContent = on ? '暂停' : '播放';
+    playBtn.setAttribute('aria-label', on ? '暂停动画' : '播放动画');
+    runState.textContent = on ? '运行中' : '已暂停';
+    liveLabel.textContent = on ? 'LIVE' : 'PAUSED';
+  }
+
+  function updateOutputs() {
+    amplitudeValue.innerHTML = `${state.A.toFixed(1)}<small>cm</small>`;
+    frequencyInputValue.innerHTML = `${state.f.toFixed(2)}<small>Hz</small>`;
+    lambdaInputValue.innerHTML = `${state.lambda.toFixed(1)}<small>m</small>`;
+    phaseInputValue.innerHTML = `${Number(phaseRange.value).toFixed(2)}<small>π</small>`;
+    speedValue.textContent = `${state.speed.toFixed(2).replace(/0$/, '')}×`;
+    probeXValue.textContent = `${selectedX().toFixed(2)} m`;
+    fitRangeFill(amplitudeRange);
+    fitRangeFill(frequencyRange);
+    fitRangeFill(lambdaRange);
+    fitRangeFill(phaseRange);
+    fitRangeFill(speedRange);
+    fitRangeFill(probeRange);
+  }
+
+  function updateReadouts() {
+    const T = period();
+    const x0 = selectedX();
+    const y0 = displacement(x0);
+    timeValue.textContent = state.time.toFixed(2);
+    periodValue.textContent = T.toFixed(2);
+    lambdaValue.textContent = state.lambda.toFixed(2);
+    waveSpeedValue.textContent = waveSpeed().toFixed(2);
+    frequencyValue.textContent = state.f.toFixed(2);
+    selectedXValue.textContent = x0.toFixed(2);
+    selectedYValue.textContent = `${y0 >= 0 ? '+' : '−'}${Math.abs(y0).toFixed(2)}`;
+    selectedPhaseValue.textContent = `${selectedPhase() >= 0 ? '+' : '−'}${Math.abs(selectedPhase()).toFixed(2)}`;
+    graphTag.textContent = `x₀ = ${x0.toFixed(2)} m`;
+    graphPeriod.textContent = `T = ${T.toFixed(2)} s`;
+  }
+
+  function setSelectedIndex(index, animate = true) {
+    const next = clamp(Math.round(index), 0, particles.length - 1);
+    if (next !== state.selected) {
+      state.selected = next;
+      if (animate) state.pull = 0;
+      probeRange.value = selectedX();
+      fitRangeFill(probeRange);
+      updateOutputs();
+      updateReadouts();
+    }
+  }
+
+  function initSceneSize() {
+    const rect = sceneWrap.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    sizes.scene.w = Math.max(1, rect.width);
+    sizes.scene.h = Math.max(1, rect.height);
+    sizes.scene.dpr = dpr;
+    sceneCanvas.width = Math.round(sizes.scene.w * dpr);
+    sceneCanvas.height = Math.round(sizes.scene.h * dpr);
+    sceneCanvas.style.width = `${sizes.scene.w}px`;
+    sceneCanvas.style.height = `${sizes.scene.h}px`;
+    sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sizes.scene.focal = Math.min(sizes.scene.w * 1.25, sizes.scene.h * 2.1);
+    sizes.scene.cx = sizes.scene.w * .5;
+    sizes.scene.cy = sizes.scene.h * .45;
+  }
+
+  function initGraphSize() {
+    const rect = graphWrap.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    sizes.graph.w = Math.max(1, rect.width);
+    sizes.graph.h = Math.max(1, rect.height);
+    sizes.graph.dpr = dpr;
+    graphCanvas.width = Math.round(sizes.graph.w * dpr);
+    graphCanvas.height = Math.round(sizes.graph.h * dpr);
+    graphCanvas.style.width = `${sizes.graph.w}px`;
+    graphCanvas.style.height = `${sizes.graph.h}px`;
+    graphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(() => { initSceneSize(); initGraphSize(); }).observe(sceneWrap);
+    new ResizeObserver(() => { initGraphSize(); }).observe(graphWrap);
+  } else {
+    window.addEventListener('resize', () => { initSceneSize(); initGraphSize(); });
+  }
+  initSceneSize();
+  initGraphSize();
+
+  function project(p) {
+    const { yaw, pitch, zoom } = state.view;
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const x1 = p.x * cy + p.z * sy;
+    const z1 = -p.x * sy + p.z * cy;
+    const y2 = p.y * cp - z1 * sp;
+    const z2 = p.y * sp + z1 * cp;
+    const s = sizes.scene.focal / (9.5 + z2) * zoom;
+    return {
+      x: sizes.scene.cx + x1 * s,
+      y: sizes.scene.cy - y2 * s,
+      s,
+      depth: z2
+    };
+  }
+
+  function drawFloor(ctx) {
+    const { w, h } = sizes.scene;
+    ctx.save();
+    ctx.lineWidth = 1;
+    const zLines = [-1.8, -1.2, -.6, 0, .6, 1.0];
+    zLines.forEach(z => {
+      const a = project({ x: -4.5, y: FLOOR_Y, z });
+      const b = project({ x: 4.5, y: FLOOR_Y, z });
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = z === 0 ? 'rgba(155,219,230,.2)' : 'rgba(155,219,230,.075)';
+      ctx.stroke();
+    });
+    [-4, -2, 0, 2, 4].forEach(x => {
+      const a = project({ x, y: FLOOR_Y, z: -1.8 });
+      const b = project({ x, y: FLOOR_Y, z: 1.0 });
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = 'rgba(155,219,230,.065)';
+      ctx.stroke();
+    });
+
+    // equilibrium rail
+    const e0 = project({ x: -4.35, y: BASE_Y, z: 0 });
+    const e1 = project({ x: 4.35, y: BASE_Y, z: 0 });
+    ctx.beginPath();
+    ctx.moveTo(e0.x, e0.y);
+    ctx.lineTo(e1.x, e1.y);
+    ctx.strokeStyle = 'rgba(209,160,90,.42)';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // small 3D axes
+    const origin = project({ x: -4.35, y: BASE_Y, z: 0 });
+    const xEnd = project({ x: -3.55, y: BASE_Y, z: 0 });
+    const yEnd = project({ x: -4.35, y: BASE_Y + .9, z: 0 });
+    const zEnd = project({ x: -4.35, y: BASE_Y, z: -.9 });
+    const axisArrow = (a, b, color) => {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - Math.cos(ang - .45) * 7, b.y - Math.sin(ang - .45) * 7);
+      ctx.lineTo(b.x - Math.cos(ang + .45) * 7, b.y - Math.sin(ang + .45) * 7);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    };
+    axisArrow(origin, xEnd, 'rgba(126,224,208,.58)');
+    axisArrow(origin, yEnd, 'rgba(209,160,90,.58)');
+    axisArrow(origin, zEnd, 'rgba(155,219,230,.48)');
+    ctx.font = '9px "Cascadia Mono", Consolas, monospace';
+    ctx.fillStyle = 'rgba(194,231,225,.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('x', xEnd.x + 9, xEnd.y - 7);
+    ctx.fillText('y', yEnd.x, yEnd.y - 9);
+    ctx.fillText('z', zEnd.x, zEnd.y + 12);
+    ctx.textAlign = 'right';
+    ctx.fillText('x / m', e1.x + 5, e1.y + 15);
+    ctx.restore();
+    void w; void h;
+  }
+
+  function drawScene() {
+    const ctx = sceneCtx;
+    const { w, h } = sizes.scene;
+    ctx.clearRect(0, 0, w, h);
+    drawFloor(ctx);
+
+    const home = particles.map(p => ({
+      ...p,
+      y: BASE_Y + displacement(p.x) * AMP_SCALE,
+      z: 0
+    }));
+    const selected = home[state.selected];
+    const yNow = selected.y;
+
+    // wave line through the row
+    ctx.beginPath();
+    home.forEach((p, i) => {
+      const s = project({ x: p.x, y: p.y, z: 0 });
+      if (i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+    });
+    ctx.strokeStyle = 'rgba(191,235,238,.82)';
+    ctx.lineWidth = 1.85;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // stems + particles, far to near
+    const drawables = home.map((p, i) => {
+      const base = project({ x: p.x, y: BASE_Y, z: 0 });
+      const top = project({ x: p.x, y: p.y, z: 0 });
+      return { i, p, base, top, depth: top.depth };
+    }).sort((a, b) => b.depth - a.depth);
+
+    drawables.forEach(item => {
+      const isSelectedHome = item.i === state.selected;
+      const stemAlpha = isSelectedHome ? .22 : .18;
+      ctx.beginPath();
+      ctx.moveTo(item.base.x, item.base.y);
+      ctx.lineTo(item.top.x, item.top.y);
+      ctx.strokeStyle = isSelectedHome ? 'rgba(223,124,96,.3)' : `rgba(122,215,207,${stemAlpha})`;
+      ctx.lineWidth = isSelectedHome ? 1.2 : 1;
+      ctx.stroke();
+
+      // little footing on the equilibrium rail
+      ctx.beginPath();
+      ctx.arc(item.base.x, item.base.y, 1.35, 0, TAU);
+      ctx.fillStyle = isSelectedHome ? 'rgba(223,124,96,.5)' : 'rgba(133,215,207,.36)';
+      ctx.fill();
+
+      if (isSelectedHome) {
+        ctx.beginPath();
+        ctx.arc(item.top.x, item.top.y, 3.5, 0, TAU);
+        ctx.strokeStyle = 'rgba(223,124,96,.82)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } else {
+        const r = clamp(item.top.s * .038, 2.0, 4.5);
+        ctx.beginPath();
+        ctx.arc(item.top.x, item.top.y, r, 0, TAU);
+        ctx.fillStyle = 'rgba(127,224,213,.9)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(5,35,38,.8)';
+        ctx.lineWidth = .9;
+        ctx.stroke();
+      }
+    });
+
+    // selected pulled-out point
+    const zPull = PULL_Z * state.pull;
+    const pulled = project({ x: selected.x, y: yNow, z: zPull });
+    const pulledBase = project({ x: selected.x, y: BASE_Y, z: zPull });
+    const homeTop = project({ x: selected.x, y: yNow, z: 0 });
+
+    // connector from home position to the pulled point
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(homeTop.x, homeTop.y);
+    ctx.lineTo(pulled.x, pulled.y);
+    ctx.strokeStyle = 'rgba(223,124,96,.52)';
+    ctx.lineWidth = 1.25;
+    ctx.setLineDash([3, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // selected front rail + vertical stem
+    const rail0 = project({ x: selected.x - .34, y: BASE_Y, z: zPull });
+    const rail1 = project({ x: selected.x + .34, y: BASE_Y, z: zPull });
+    const rail2 = project({ x: selected.x, y: BASE_Y, z: zPull + .28 });
+    ctx.beginPath();
+    ctx.moveTo(rail0.x, rail0.y);
+    ctx.lineTo(rail1.x, rail1.y);
+    ctx.lineTo(rail2.x, rail2.y);
+    ctx.strokeStyle = 'rgba(223,124,96,.46)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(pulledBase.x, pulledBase.y);
+    ctx.lineTo(pulled.x, pulled.y);
+    ctx.strokeStyle = 'rgba(223,124,96,.68)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // selected dot
+    const rr = clamp(pulled.s * .068, 6.6, 11);
+    ctx.beginPath();
+    ctx.arc(pulled.x, pulled.y, rr + 6, 0, TAU);
+    ctx.strokeStyle = 'rgba(223,124,96,.28)';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(pulled.x, pulled.y, rr, 0, TAU);
+    ctx.fillStyle = '#df7c60';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,247,240,.9)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(pulledBase.x, pulledBase.y, 3, 0, TAU);
+    ctx.fillStyle = 'rgba(223,124,96,.58)';
+    ctx.fill();
+
+    ctx.font = 'italic 10px "Cambria Math", Georgia, serif';
+    ctx.fillStyle = 'rgba(247,177,151,.9)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('x₀', pulled.x + rr + 8, pulled.y - rr * .2);
+    ctx.restore();
+
+    // particle screen positions for hit testing
+    particleScreens = home.map((p, i) => {
+      const s = project({ x: p.x, y: p.y, z: 0 });
+      return { i, x: s.x, y: s.y };
+    });
+
+    // small floor marker under selected
+    const floorSelected = project({ x: selected.x, y: FLOOR_Y, z: zPull });
+    ctx.beginPath();
+    ctx.ellipse(floorSelected.x, floorSelected.y, 22, 5.2, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(223,124,96,.14)';
+    ctx.fill();
+    void h;
+  }
+
+  function drawGraph() {
+    const ctx = graphCtx;
+    const { w, h } = sizes.graph;
+    const m = { left: 47, right: 22, top: 20, bottom: 31 };
+    const pw = Math.max(20, w - m.left - m.right);
+    const ph = Math.max(20, h - m.top - m.bottom);
+    const T = period();
+    const span = 2 * T;
+    const start = state.time < span ? 0 : state.time - span;
+    const end = start + span;
+    const x0 = selectedX();
+    const xTo = t => m.left + ((t - start) / span) * pw;
+    const yTo = y => m.top + ((5 - y) / 10) * ph;
+    const nowY = displacement(x0);
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // grid
+    ctx.strokeStyle = 'rgba(18,43,48,.065)';
+    ctx.lineWidth = 1;
+    [-4, -2, 0, 2, 4].forEach(v => {
+      const y = yTo(v);
+      ctx.beginPath();
+      ctx.moveTo(m.left, y);
+      ctx.lineTo(m.left + pw, y);
+      ctx.stroke();
+    });
+    for (let i = 0; i <= 4; i++) {
+      const x = m.left + (i / 4) * pw;
+      ctx.beginPath();
+      ctx.moveTo(x, m.top);
+      ctx.lineTo(x, m.top + ph);
+      ctx.stroke();
+    }
+
+    // amplitude envelope
+    ctx.strokeStyle = 'rgba(209,160,90,.45)';
+    ctx.setLineDash([4, 5]);
+    [state.A, -state.A].forEach(v => {
+      const y = yTo(v);
+      ctx.beginPath();
+      ctx.moveTo(m.left, y);
+      ctx.lineTo(m.left + pw, y);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // axes
+    ctx.strokeStyle = 'rgba(18,43,48,.23)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(m.left, yTo(0));
+    ctx.lineTo(m.left + pw, yTo(0));
+    ctx.moveTo(m.left, m.top);
+    ctx.lineTo(m.left, m.top + ph);
+    ctx.stroke();
+
+    // y labels
+    ctx.font = '9px "Cascadia Mono", Consolas, monospace';
+    ctx.fillStyle = '#6a7d7f';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    [-4, 0, 4].forEach(v => {
+      const y = yTo(v);
+      ctx.fillText(String(v), m.left - 8, y);
+      ctx.beginPath();
+      ctx.moveTo(m.left - 3, y);
+      ctx.lineTo(m.left, y);
+      ctx.strokeStyle = 'rgba(18,43,48,.2)';
+      ctx.stroke();
+    });
+
+    // x labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i <= 4; i++) {
+      const t = start + (span / 4) * i;
+      const x = xTo(t);
+      ctx.fillText(t.toFixed(1), x, m.top + ph + 9);
+      ctx.beginPath();
+      ctx.moveTo(x, m.top + ph);
+      ctx.lineTo(x, m.top + ph + 4);
+      ctx.strokeStyle = 'rgba(18,43,48,.2)';
+      ctx.stroke();
+    }
+
+    ctx.font = 'italic 10px "Cambria Math", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6a7d7f';
+    ctx.fillText('y / cm', m.left, 5);
+    ctx.textAlign = 'right';
+    ctx.fillText('t / s', m.left + pw, m.top + ph + 21);
+
+    // curve
+    const N = Math.max(180, Math.round(pw * 1.1));
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const t = start + (i / N) * span;
+      const y = state.A * Math.sin(omega() * t - kWave() * x0 + state.phi);
+      const sx = xTo(t);
+      const sy = yTo(y);
+      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = '#df7c60';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    // current line + point
+    const nowX = xTo(clamp(state.time, start, end));
+    ctx.beginPath();
+    ctx.moveTo(nowX, m.top);
+    ctx.lineTo(nowX, m.top + ph);
+    ctx.strokeStyle = 'rgba(18,43,48,.28)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(nowX, yTo(nowY), 5.2, 0, TAU);
+    ctx.fillStyle = '#df7c60';
+    ctx.fill();
+    ctx.strokeStyle = '#fbf7ec';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function updateView() {
+    const ease = 1 - Math.exp(-.016 * 9);
+    state.view.yaw += (state.target.yaw - state.view.yaw) * ease;
+    state.view.pitch += (state.target.pitch - state.view.pitch) * ease;
+    state.view.zoom += (state.target.zoom - state.view.zoom) * ease;
+  }
+
+  function nearestParticle(px, py) {
+    let best = -1;
+    let bestDist = 24;
+    particleScreens.forEach(p => {
+      const d = Math.hypot(px - p.x, py - p.y);
+      if (d < bestDist) { bestDist = d; best = p.i; }
+    });
+    return best;
+  }
+
+  function pointerPos(e) {
+    const r = sceneCanvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  sceneCanvas.addEventListener('pointerdown', e => {
+    drag.active = true;
+    drag.id = e.pointerId;
+    drag.moved = 0;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    sceneWrap.classList.add('is-dragging');
+    try { sceneCanvas.setPointerCapture?.(e.pointerId); } catch {}
+  });
+
+  sceneCanvas.addEventListener('pointermove', e => {
+    if (!drag.active) {
+      const p = pointerPos(e);
+      sceneCanvas.style.cursor = nearestParticle(p.x, p.y) >= 0 ? 'pointer' : 'grab';
+      return;
+    }
+    if (e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    drag.moved += Math.abs(dx) + Math.abs(dy);
+    if (drag.moved > 4) {
+      state.target.yaw += dx * .0065;
+      state.target.pitch = clamp(state.target.pitch + dy * .0045, .1, .92);
+    }
+  });
+
+  function endDrag(e) {
+    if (!drag.active) return;
+    if (e && e.pointerId !== drag.id) return;
+    const wasTap = drag.moved <= 4;
+    drag.active = false;
+    drag.id = null;
+    sceneWrap.classList.remove('is-dragging');
+    if (wasTap && e) {
+      const p = pointerPos(e);
+      const idx = nearestParticle(p.x, p.y);
+      if (idx >= 0) setSelectedIndex(idx, true);
+    }
+  }
+  sceneCanvas.addEventListener('pointerup', endDrag);
+  sceneCanvas.addEventListener('pointercancel', endDrag);
+  sceneCanvas.addEventListener('lostpointercapture', () => {
+    drag.active = false;
+    sceneWrap.classList.remove('is-dragging');
+  });
+
+  sceneCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    state.target.zoom = clamp(state.target.zoom * Math.exp(-e.deltaY * .0012), .72, 1.5);
+  }, { passive: false });
+
+  resetViewBtn.addEventListener('click', () => {
+    state.target.yaw = defaults.yaw;
+    state.target.pitch = defaults.pitch;
+    state.target.zoom = defaults.zoom;
+  });
+
+  playBtn.addEventListener('click', () => setPlaying(!state.playing));
+  resetBtn.addEventListener('click', () => {
+    state.A = defaults.A;
+    state.f = defaults.f;
+    state.lambda = defaults.lambda;
+    state.phi = defaults.phi * Math.PI;
+    state.speed = defaults.speed;
+    state.time = 0;
+    state.selected = defaults.selected;
+    state.pull = 0;
+    amplitudeRange.value = state.A;
+    frequencyRange.value = state.f;
+    lambdaRange.value = state.lambda;
+    phaseRange.value = defaults.phi;
+    speedRange.value = state.speed;
+    probeRange.value = selectedX();
+    updateOutputs();
+    setPlaying(false);
+    updateReadouts();
+  });
+
+  amplitudeRange.addEventListener('input', () => { state.A = Number(amplitudeRange.value); updateOutputs(); updateReadouts(); });
+  frequencyRange.addEventListener('input', () => { state.f = Number(frequencyRange.value); updateOutputs(); updateReadouts(); });
+  lambdaRange.addEventListener('input', () => { state.lambda = Number(lambdaRange.value); updateOutputs(); updateReadouts(); });
+  phaseRange.addEventListener('input', () => { state.phi = Number(phaseRange.value) * Math.PI; updateOutputs(); updateReadouts(); });
+  speedRange.addEventListener('input', () => { state.speed = Number(speedRange.value); updateOutputs(); });
+  probeRange.addEventListener('input', () => {
+    const v = Number(probeRange.value);
+    const idx = Math.round((v + X_HALF) / X_STEP);
+    setSelectedIndex(idx, false);
+    updateOutputs();
+    updateReadouts();
+  });
+
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+    if (typing) return;
+    if (e.code === 'Space' && !e.target.closest('button')) {
+      e.preventDefault();
+      setPlaying(!state.playing);
+      return;
+    }
+    if (e.key.toLowerCase() === 'r') {
+      resetBtn.click();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      setSelectedIndex(state.selected + dir, false);
+      updateOutputs();
+      updateReadouts();
+    }
+  });
+
+  const params = new URLSearchParams(location.search);
+  const numberParam = name => {
+    const raw = params.get(name);
+    if (raw === null || raw.trim() === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+  if (params.get('pause') === '1') state.playing = false;
+  const a = numberParam('a');
+  if (a !== null) { state.A = clamp(a, 1, 5); amplitudeRange.value = state.A; }
+  const f = numberParam('f');
+  if (f !== null) { state.f = clamp(f, .5, 2); frequencyRange.value = state.f; }
+  const lm = numberParam('lambda');
+  if (lm !== null) { state.lambda = clamp(lm, 1.5, 4.5); lambdaRange.value = state.lambda; }
+  const ph = numberParam('phi');
+  if (ph !== null) { state.phi = clamp(ph, 0, 2) * Math.PI; phaseRange.value = clamp(ph, 0, 2); }
+  const t = numberParam('t');
+  if (t !== null) state.time = Math.max(0, t);
+  const x0 = numberParam('x0');
+  if (x0 !== null) {
+    state.selected = clamp(Math.round((x0 + X_HALF) / X_STEP), 0, particles.length - 1);
+    probeRange.value = selectedX();
+  }
+
+  updateOutputs();
+  setPlaying(state.playing);
+  updateReadouts();
+  state.pull = 0;
+  const start = performance.now();
+  let last = start;
+  let uiClock = 0;
+
+  function loop(now) {
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+    if (state.playing) state.time += dt * state.speed;
+    state.pull += (1 - state.pull) * Math.min(1, dt * 4.5);
+    updateView();
+    drawScene();
+    drawGraph();
+    uiClock += dt;
+    if (uiClock > .08) { updateReadouts(); uiClock = 0; }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
